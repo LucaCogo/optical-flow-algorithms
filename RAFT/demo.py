@@ -17,6 +17,7 @@ from utils.utils import InputPadder
 
 DEVICE = 'cpu'
 FRAMES_PATH = ''
+OUT_FOLDER = ''
 
 def load_image(imfile):
     img = np.array(Image.open(imfile)).astype(np.uint8)
@@ -36,11 +37,11 @@ def viz(img, flo, count = ""):
     img_flo = cv2.cvtColor(img_flo, cv2.COLOR_RGB2BGR)
 
 
-    path = FRAMES_PATH + "/raft-estimates"  
+    path = FRAMES_PATH + "/" + OUT_FOLDER + "-estimates" 
     if not os.path.exists(path):
         os.mkdir(path)
        
-    imname =  "raft_frame_" + str(count) + ".png"
+    imname =  OUT_FOLDER + "_frame_" + str(count) + ".png"
     filename = os.path.join(path, imname)
     cv2.imwrite(filename, img_flo)
     print(f"Saved to {filename}")
@@ -85,7 +86,16 @@ if __name__ == '__main__':
     parser.add_argument('--small', action='store_true', help='use small model')
     parser.add_argument('--mixed_precision', action='store_true', help='use mixed precision')
     parser.add_argument('--alternate_corr', action='store_true', help='use efficent correlation implementation')
+    parser.add_argument('--batch_mode', action='store_true')
+    parser.add_argument('--output_folder', help="name of folder where to save results")
     args = parser.parse_args()
 
     FRAMES_PATH = args.path
-    demo(args)
+    OUT_FOLDER = args.output_folder
+
+    if args.batch_mode:
+        print("Batch mode")
+        demo(args)
+    else:
+        print("Iterative mode")
+        demo(args)

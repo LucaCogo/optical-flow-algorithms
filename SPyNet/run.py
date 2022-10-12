@@ -298,16 +298,16 @@ if __name__ == '__main__':
     FRAMES_PATH = args.path
     MODEL = args.model
 
-    t = time.time()
-    demo_batch(args)
-    t_batch = time.time() - t
+    # t = time.time()
+    # demo_batch(args)
+    # t_batch = time.time() - t
 
 
     t = time.time()
     demo(args)
     t_iter = time.time() - t
 
-    print(f"Batch elapsed time: {t_batch}")
+    # print(f"Batch elapsed time: {t_batch}")
     print(f"Iter elapsed time: {t_iter}")
 
 
