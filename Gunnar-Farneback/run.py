@@ -48,7 +48,20 @@ def compute_flow(args):
         prvs = cv2.cvtColor(image1, cv2.COLOR_BGR2GRAY)
         nxt = cv2.cvtColor(image2, cv2.COLOR_BGR2GRAY)
 
-        flow = cv2.calcOpticalFlowFarneback(prvs, nxt, None, 0.5, 3, 15, 3, 5, 1.2, 0)
+        if args.gpu:
+            optflow = farneback3d.Farneback(
+                    pyr_scale=0.5,         # Scaling between multi-scale pyramid levels
+                    levels=3,              # Number of multi-scale levels
+                    num_iterations=15,      # Iterations on each multi-scale level
+                    winsize=3,             # Window size for Gaussian filtering of polynomial coefficients
+                    poly_n=5,              # Size of window for weighted least-square estimation of polynomial coefficients
+                    poly_sigma=1.2,        # Sigma for Gaussian weighting of least-square estimation of polynomial coefficients
+                )
+
+            flow = optflow.calc_flow(prvs, nxt)
+
+        else:
+            flow = cv2.calcOpticalFlowFarneback(prvs, nxt, None, 0.5, 3, 15, 3, 5, 1.2, 0)
 
         if OUT_FOLDER is not None:
             viz(image2, flow, count)
@@ -62,6 +75,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--path', help="dataset for evaluation")
     parser.add_argument('--output_folder', help="name of folder where to save results")
+    parser.add_argument('--gpu', action="store_true", help="specify if gpu should be used")
 
     args = parser.parse_args()
 
