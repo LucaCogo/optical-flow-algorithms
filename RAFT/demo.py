@@ -56,7 +56,7 @@ def demo(args):
     model.to(DEVICE)
     model.eval()
 
-    t = time.time()
+    e_time = 0
 
     with torch.no_grad():
         images = glob.glob(os.path.join(args.path, '*.png')) + \
@@ -72,13 +72,15 @@ def demo(args):
             padder = InputPadder(image1.shape)
             image1, image2 = padder.pad(image1, image2)
 
-            flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
+            tim = time.time()
+            flow_low, flow_up = model(image1, image2, iters=32, test_mode=True)
+            e_time += time.time() - tim
 
             if OUT_FOLDER is not None:
                 viz(image1[0], flow_up[0], count)
 
             count +=1
-    print(f"Elapsed time (iterative): {time.time() - t}")
+    print(f"Elapsed time (iter): {e_time}")
 
 def demo_batch(args):
     
@@ -89,7 +91,7 @@ def demo_batch(args):
     model.to(DEVICE)
     model.eval()
 
-    t = time.time()
+    
     with torch.no_grad():
         image_filenames = glob.glob(os.path.join(args.path, '*.png')) + \
                  glob.glob(os.path.join(args.path, '*.jpg'))
@@ -111,8 +113,9 @@ def demo_batch(args):
         images_batch1 = images[:-1]
         images_batch2 = images[1:]
 
-        
-        _, flow_out = model(images_batch1, images_batch2, iters=20, test_mode=True)
+        tim = time.time()
+        _, flow_out = model(images_batch1, images_batch2, iters=32, test_mode=True)
+        print(f"Elapsed time (batch mode): {time.time() - tim}")
 
         # images = padder.unpad(images)
 
@@ -121,7 +124,7 @@ def demo_batch(args):
             for count, image in enumerate(images[:-1]):
                 viz(image, flow_out[count], count) 
 
-    print(f"Elapsed time (batch): {time.time() - t}")
+    
 
 
 if __name__ == '__main__':

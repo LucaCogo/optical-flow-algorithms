@@ -221,7 +221,7 @@ def demo(args):
     images = sorted(images)
     count = 0
 
-
+    e_time = 0
     for imfile1, imfile2 in zip(images[:-1], images[1:]):
 
         image1 = load_image(imfile1)
@@ -233,8 +233,9 @@ def demo(args):
         tenPreprocessedTwo = image2.view(1, 3, intHeight, intWidth)
 
 
-
+        tim = time.time()
         flow_out = estimate(tenPreprocessedOne, tenPreprocessedTwo)
+        e_time += time.time() - tim
         flow_out = flow_out[0,:,:,:]
 
         if OUT_FOLDER is not None:
@@ -242,6 +243,8 @@ def demo(args):
 
 
         count +=1
+
+    print(f"Elapsed time SPyNet (iter): {e_time}")
 
 
 def demo_batch(args):
@@ -261,8 +264,13 @@ def demo_batch(args):
     images_batch1 = images[:-1]
     images_batch2 = images[1:] 
 
+    tim = time.time()
     flow_out = estimate(images_batch1, images_batch2) 
+    print(f"1) Elapsed time SPyNet (batch mode): {time.time() - tim}")
 
+    tim = time.time()
+    flow_out = estimate(images_batch1, images_batch2) 
+    print(f"2) Elapsed time SPyNet (batch mode): {time.time() - tim}")
     
 
     if OUT_FOLDER is not None:
@@ -284,10 +292,9 @@ if __name__ == '__main__':
     MODEL = args.model
     OUT_FOLDER = args.output_folder
 
-    t = time.time()
+    
     if args.batch_mode:
         demo_batch(args)
     else:
         demo(args)
     
-    print(f'''Elapsed time SPyNet (batch mode: {args.batch_mode}): {time.time()-t}''')
