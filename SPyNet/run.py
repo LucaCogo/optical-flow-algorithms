@@ -23,6 +23,7 @@ torch.set_grad_enabled(False) # make sure to not compute gradients for computati
 torch.backends.cudnn.enabled = True # make sure to use cudnn for computational performance
 
 DEVICE = 'cpu'
+OUT_FOLDER = ''
 
 MODEL = ''
 
@@ -220,6 +221,7 @@ def demo(args):
     images = sorted(images)
     count = 0
 
+
     for imfile1, imfile2 in zip(images[:-1], images[1:]):
 
         image1 = load_image(imfile1)
@@ -235,17 +237,9 @@ def demo(args):
         flow_out = estimate(tenPreprocessedOne, tenPreprocessedTwo)
         flow_out = flow_out[0,:,:,:]
 
-        viz(image1, flow_out, count)
+        if OUT_FOLDER is not None:
+            viz(image1, flow_out, count)
 
-        if args.out is not None:
-            filename = args.out + str(count)
-            objOutput = open(filename, 'wb')
-
-            np.array([ 80, 73, 69, 72 ], np.uint8).tofile(objOutput)  
-            np.array([ tenOutput.shape[2], tenOutput.shape[1] ], np.int32).tofile(objOutput)
-            np.array(tenOutput.numpy().transpose(1, 2, 0), np.float32).tofile(objOutput)
-
-            objOutput.close()
 
         count +=1
 
@@ -265,26 +259,16 @@ def demo_batch(args):
 
 
     images_batch1 = images[:-1]
-    images_batch2 = images[1:]          
+    images_batch2 = images[1:] 
+
     flow_out = estimate(images_batch1, images_batch2) 
 
-    for count, image in enumerate(images[:-1]):
-        viz(image, flow_out[count], count)  
+    
 
+    if OUT_FOLDER is not None:
+        for count, image in enumerate(images[:-1]):
+            viz(image, flow_out[count], count)  
 
-        # viz(image1, flow_out, count)
-
-        # if args.out is not None:
-        #     filename = args.out + str(count)
-        #     objOutput = open(filename, 'wb')
-
-        #     np.array([ 80, 73, 69, 72 ], np.uint8).tofile(objOutput)  
-        #     np.array([ tenOutput.shape[2], tenOutput.shape[1] ], np.int32).tofile(objOutput)
-        #     np.array(tenOutput.numpy().transpose(1, 2, 0), np.float32).tofile(objOutput)
-
-        #     objOutput.close()
-
-        # count +=1
 
 
 if __name__ == '__main__':
@@ -292,27 +276,18 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', help="restore checkpoint")
     parser.add_argument('--path', help="dataset for evaluation")
-    parser.add_argument('--out', help="output .flo filename")
+    parser.add_argument('--output_folder', help="output folder")
+    parser.add_argument('--batch_mode', action= "store_true" ,help="specify if batch mode should be used")
     args = parser.parse_args()
 
     FRAMES_PATH = args.path
     MODEL = args.model
-
-    # t = time.time()
-    # demo_batch(args)
-    # t_batch = time.time() - t
-
+    OUT_FOLDER = args.output_folder
 
     t = time.time()
-    demo(args)
-    t_iter = time.time() - t
-
-    # print(f"Batch elapsed time: {t_batch}")
-    print(f"Iter elapsed time: {t_iter}")
-
-
-    # print("Iterative", timeit.timeit(lambda: demo(args)))
-
-
+    if args.batch_mode:
+        demo_batch(args)
+    else:
+        demo(args)
     
-# end
+    print(f'''Elapsed time SPyNet (batch mode: {args.batch_mode}): {time.time()-t}''')

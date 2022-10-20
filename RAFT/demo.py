@@ -3,16 +3,15 @@ sys.path.append('core')
 
 import argparse
 import os
+import time
 import cv2
 import glob
 import numpy as np
 import torch
 from PIL import Image
-
 from raft import RAFT
 from utils import flow_viz
 from utils.utils import InputPadder
-
 
 
 DEVICE = 'cpu'
@@ -27,8 +26,8 @@ def load_image(imfile):
 
 def viz(img, flo, count = ""):
 
-    img = img[0].permute(1,2,0).cpu().numpy()
-    flo = flo[0].permute(1,2,0).cpu().numpy()
+    img = img.permute(1,2,0).cpu().numpy()
+    flo = flo.permute(1,2,0).cpu().numpy()
     
     # map flow to rgb image
     flo = flow_viz.flow_to_image(flo)
@@ -57,6 +56,8 @@ def demo(args):
     model.to(DEVICE)
     model.eval()
 
+    t = time.time()
+
     with torch.no_grad():
         images = glob.glob(os.path.join(args.path, '*.png')) + \
                  glob.glob(os.path.join(args.path, '*.jpg'))
@@ -72,11 +73,55 @@ def demo(args):
             image1, image2 = padder.pad(image1, image2)
 
             flow_low, flow_up = model(image1, image2, iters=20, test_mode=True)
-            viz(image1, flow_up, count)
+
+            if OUT_FOLDER is not None:
+                viz(image1[0], flow_up[0], count)
 
             count +=1
+    print(f"Elapsed time (iterative): {time.time() - t}")
+
+def demo_batch(args):
+    
+    model = torch.nn.DataParallel(RAFT(args))
+    model.load_state_dict(torch.load(args.model, map_location=torch.device(DEVICE)))
+
+    model = model.module
+    model.to(DEVICE)
+    model.eval()
+
+    t = time.time()
+    with torch.no_grad():
+        image_filenames = glob.glob(os.path.join(args.path, '*.png')) + \
+                 glob.glob(os.path.join(args.path, '*.jpg'))
+        
+        image_filenames = sorted(image_filenames)
+
+        images = []
+        for imfile in image_filenames:
+                images.append(load_image(imfile))
+
+        images = torch.cat(images)
 
 
+
+        padder = InputPadder(images.shape)
+        images = padder.pad(images)[0]
+
+
+        images_batch1 = images[:-1]
+        images_batch2 = images[1:]
+
+        
+        _, flow_out = model(images_batch1, images_batch2, iters=20, test_mode=True)
+
+        # images = padder.unpad(images)
+
+
+        if OUT_FOLDER is not None:
+            for count, image in enumerate(images[:-1]):
+                viz(image, flow_out[count], count) 
+
+    print(f"Elapsed time (batch): {time.time() - t}")
 
 
 if __name__ == '__main__':
@@ -95,7 +140,7 @@ if __name__ == '__main__':
 
     if args.batch_mode:
         print("Batch mode")
-        demo(args)
+        demo_batch(args)
     else:
         print("Iterative mode")
         demo(args)

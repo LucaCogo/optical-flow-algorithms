@@ -10,7 +10,6 @@ python demo.py --model=models/raft-sintel.pth --path=../demo-frames-reds-lq/seq_
 echo "REDS-LQ-SEQ_2"
 python demo.py --model=models/raft-sintel.pth --path=../demo-frames-reds-lq/seq_2 --output_folder=raft
 
-
 echo "REDS-LQ-SEQ_3"
 python demo.py --model=models/raft-sintel.pth --path=../demo-frames-reds-lq/seq_3 --output_folder=raft
 
@@ -70,5 +69,7 @@ python demo.py --model=models/raft-small.pth --path=../demo-frames-reds-hq/seq_3
 
 echo "REDS-LONG-HQ-SEQ-small"
 python demo.py --model=models/raft-small.pth --path=../demo-frames-reds-hq/long_seq --small --output_folder=raft-s
+
+
 
 
